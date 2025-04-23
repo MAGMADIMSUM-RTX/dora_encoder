@@ -1,0 +1,12 @@
+nodes:
+  - id: encoder
+    build: cargo build -p encoder
+    path: target/debug/encoder
+    inputs:
+      key: keyboard/key
+
+  - id: keyboard
+    build: cargo build -p keyboard
+    path: target/debug/keyboard
+    outputs:
+      - key

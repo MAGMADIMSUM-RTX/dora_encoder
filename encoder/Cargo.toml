@@ -1,0 +1,10 @@
+[package]
+name = "encoder"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serialport = "4.7.1"
+oled = {path="../../oled"} 
+linux-embedded-hal = "0.4.0"
+dora-node-api = "0.3.11"
