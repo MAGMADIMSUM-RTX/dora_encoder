@@ -2,7 +2,7 @@ use dora_node_api::{DoraNode, Event, IntoArrow, dora_core::config::DataId};
 use serialport::SerialPort;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let (node, mut events) = DoraNode::init_from_env()?;
@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // 串口
     let port_name = "/dev/ttyUSB0";
     let baud_rate = 1_000_000;
-    let timeout = Duration::from_millis(10);
+    let timeout = Duration::from_millis(5);
 
     let mut port = serialport::new(port_name, baud_rate)
         .timeout(timeout)
@@ -66,13 +66,51 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // 读取数据进程
     std::thread::spawn(move || {
+        // 添加频率统计所需的变量
+        let mut last_stats_time = Instant::now();
+        let mut message_counts: Vec<[u32; 3]> = vec![[0; 3]; encoder_num]; // [speed, circle, angle]
+
         loop {
             let mut encoder_data = encoder_data_clone.lock().unwrap();
             for index in 0..encoder_num {
                 let current_id = encoder_data[index][0];
+
                 read_speed(&mut port, current_id, &mut encoder_data[index]);
+                message_counts[index][0] += 1;
+
                 read_circle(&mut port, current_id, &mut encoder_data[index]);
+                message_counts[index][1] += 1;
+
                 read_angle(&mut port, current_id, &mut encoder_data[index]);
+                message_counts[index][2] += 1;
+            }
+
+            // 每秒计算并打印一次频率
+            let now = Instant::now();
+            if now.duration_since(last_stats_time).as_secs() >= 1 {
+                let elapsed = now.duration_since(last_stats_time).as_secs_f32();
+
+                println!("编码器读取频率统计 (消息/秒)：");
+                for index in 0..encoder_num {
+                    let id = encoder_data[index][0];
+                    let speed_freq = message_counts[index][0] as f32 / elapsed;
+                    let circle_freq = message_counts[index][1] as f32 / elapsed;
+                    let angle_freq = message_counts[index][2] as f32 / elapsed;
+
+                    println!(
+                        "ID: {}, 速度: {:.2} Hz, 圈数: {:.2} Hz, 角度: {:.2} Hz, 总计: {:.2} Hz",
+                        id,
+                        speed_freq,
+                        circle_freq,
+                        angle_freq,
+                        speed_freq + circle_freq + angle_freq
+                    );
+
+                    // 重置计数器
+                    message_counts[index] = [0; 3];
+                }
+                drop(encoder_data); // 释放锁
+                last_stats_time = now;
             }
         }
     });
@@ -170,7 +208,7 @@ fn read_speed(port: &mut Box<dyn SerialPort>, display_id: u8, data: &mut [u8; 8]
     send_data[7] = (crc >> 8) as u8;
     port.write_all(&send_data).expect("发送数据失败");
 
-    let mut buf = [0u8; 256];
+    let mut buf = [0u8; 10];
     port.read(&mut buf).expect("读取数据失败");
     data[4..=7].copy_from_slice(&buf[3..=6]);
 }
@@ -182,7 +220,7 @@ fn read_circle(port: &mut Box<dyn SerialPort>, display_id: u8, data: &mut [u8; 8
     send_data[7] = (crc >> 8) as u8;
     port.write_all(&send_data).expect("发送数据失败");
 
-    let mut buf = [0u8; 256];
+    let mut buf = [0u8; 8];
     port.read(&mut buf).expect("读取数据失败");
     data[3] = buf[4];
 }
@@ -194,7 +232,7 @@ fn read_angle(port: &mut Box<dyn SerialPort>, display_id: u8, data: &mut [u8; 8]
     send_data[7] = (crc >> 8) as u8;
     port.write_all(&send_data).expect("发送数据失败");
 
-    let mut buf = [0u8; 256];
+    let mut buf = [0u8; 8];
     port.read(&mut buf).expect("读取数据失败");
     data[1..=2].copy_from_slice(&buf[3..=4]);
 }
