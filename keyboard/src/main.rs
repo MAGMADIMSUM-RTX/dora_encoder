@@ -15,8 +15,8 @@ struct InputEvent {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    println!("尝试打开 /dev/input/event0");
-    let mut file = File::open("/dev/input/event0")?;
+    println!("尝试打开 /dev/input/event5");
+    let mut file = File::open("/dev/input/event5")?;
     println!("成功打开");
 
     let mut buffer = [0u8; std::mem::size_of::<InputEvent>()];

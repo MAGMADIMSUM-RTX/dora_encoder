@@ -1,3 +1,3 @@
 [workspace]
 resolver = "2"
-members = ["keyboard", "encoder"]
+members = ["keyboard", "encoder", "oled_display"]

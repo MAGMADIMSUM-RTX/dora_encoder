@@ -832,7 +832,6 @@ version = "0.1.0"
 dependencies = [
  "dora-node-api",
  "linux-embedded-hal",
- "oled",
  "serialport",
 ]
 
@@ -2036,6 +2035,15 @@ dependencies = [
  "embedded-hal",
  "linux-embedded-hal",
  "slice",
+]
+
+[[package]]
+name = "oled_display"
+version = "0.1.0"
+dependencies = [
+ "dora-node-api",
+ "linux-embedded-hal",
+ "oled",
 ]
 
 [[package]]
