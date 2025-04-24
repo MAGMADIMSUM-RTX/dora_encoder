@@ -210,6 +210,7 @@ fn read_speed(port: &mut Box<dyn SerialPort>, display_id: u8, data: &mut [u8; 8]
 
     let mut buf = [0u8; 10];
     port.read(&mut buf).expect("读取数据失败");
+    data[0] = buf[0];
     data[4..=7].copy_from_slice(&buf[3..=6]);
 }
 
@@ -222,6 +223,7 @@ fn read_circle(port: &mut Box<dyn SerialPort>, display_id: u8, data: &mut [u8; 8
 
     let mut buf = [0u8; 8];
     port.read(&mut buf).expect("读取数据失败");
+    data[0] = buf[0];
     data[3] = buf[4];
 }
 
@@ -234,6 +236,7 @@ fn read_angle(port: &mut Box<dyn SerialPort>, display_id: u8, data: &mut [u8; 8]
 
     let mut buf = [0u8; 8];
     port.read(&mut buf).expect("读取数据失败");
+    data[0] = buf[0];
     data[1..=2].copy_from_slice(&buf[3..=4]);
 }
 
